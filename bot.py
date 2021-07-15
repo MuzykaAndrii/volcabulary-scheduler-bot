@@ -74,8 +74,9 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     new_bundle.encode_words(words)
     try:
         new_bundle.save()
-    except:
+    except Exception as e:
         await message.answer('Some problem while saving data, please try one more time(', reply_markup=types.ReplyKeyboardRemove())
+        print(e)
         await state.finish()
         return
 
