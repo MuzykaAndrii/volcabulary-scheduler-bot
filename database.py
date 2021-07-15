@@ -1,9 +1,10 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy import Column, Integer, ForeignKey, Text
 from functools import wraps
 from config import Config
+import json
 
 engine = create_engine(Config.DATABASE_URL, echo=True)
 Session = sessionmaker(bind=engine)
@@ -26,9 +27,25 @@ class User(DbMixin, Base):
 
     id = Column('id', Integer, primary_key=True, unique=True)
     telegram_id = Column('telegram_id', Integer, unique=True)
+    bundles = relationship('Bundle', backref='creator', lazy='dynamic')
 
     def __init__(self, telegram_id):
         self.telegram_id = telegram_id
+
+class Bundle(DbMixin, Base):
+    __tablename__ = 'bundles'
+    id = Column('id', Integer, primary_key=True, unique=True)
+    creator_id = Column('creator_id', Integer, ForeignKey('users.id'), nullable=False)
+    words = Column('words' ,Text, nullable=False)
+
+    def __init__(self, creator_id):
+        self.creator_id = creator_id
+    
+    def encode_words(self, dict_words):
+        self.words = json.dumps(dict_words, ensure_ascii=False)
+    
+    def decode_words(self):
+        return json.loads(self.words)
 
 def manage_user(f):
     @wraps(f)

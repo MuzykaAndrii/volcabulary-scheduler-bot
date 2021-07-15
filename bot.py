@@ -3,7 +3,7 @@ import logging
 from aiogram import Bot, Dispatcher, executor, types
 from config import Config
 
-from database import manage_user
+from database import manage_user, Bundle
 
 #for state machine
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -51,6 +51,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     # And remove keyboard (just in case)
     await message.reply('Cancelled.', reply_markup=types.ReplyKeyboardRemove())
 
+# if swap this handler with next, command save will not works
 @dp.message_handler(state=Words.set_word, commands='save')
 @dp.message_handler(Text(equals='save', ignore_case=True), state=Words.set_word)
 async def cancel_handler(message: types.Message, state: FSMContext):
