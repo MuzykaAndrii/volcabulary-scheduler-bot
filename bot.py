@@ -70,7 +70,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
     # store words in database
     user_telegram_id = message.chat.id
-    current_user = session.query(User).filter_by(telegram_id=user_telegram_id)
+    current_user = session.query(User).filter_by(telegram_id=user_telegram_id).first()
     new_bundle = Bundle(current_user.id)
     new_bundle.encode_words(words)
     try:
