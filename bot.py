@@ -11,6 +11,10 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 
+#for web app and webhook
+from aiogram.dispatcher.webhook import configure_app
+from aiohttp import web
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
@@ -111,6 +115,19 @@ async def send_welcome(message: types.Message):
 async def echo(message: types.Message):
     await message.answer(message.text)
 
+# handle /api route
+async def api_handler(request):
+    print(request, end='\n\n\n')
+    return web.json_response({"status": "OK"}, status=200)
+
+
+app = web.Application()
+# add a custom route
+app.add_routes([web.get('/api', api_handler)])
+# every request to /bot route will be retransmitted to dispatcher to be handled
+# as a bot update
+configure_app(dp, app, "/bot")
 
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+    # executor.start_polling(dp, skip_updates=True)
+    web.run_app(app, port=5000)
