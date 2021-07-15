@@ -117,8 +117,20 @@ async def echo(message: types.Message):
 
 # handle /api route
 async def api_handler(request):
-    print(request, end='\n\n\n')
-    return web.json_response({"status": "OK"}, status=200)
+    url_params = request.rel_url.query
+    try:
+        user_id = int(url_params['user'])
+        bundle_id = int(url_params['bundle'])
+    except KeyError:
+        return web.json_response({"status": "Expected args: user, bundle"}, status=404)
+    except ValueError:
+        return web.json_response({"status": "Expected args types: integer"}, status=404)
+    else:
+        bundle = session.query(Bundle).filter(Bundle.id==bundle_id, Bundle.creator_id==user_id).first()
+        if bundle:
+            return web.json_response(bundle.words, status=200, content_type='application/json',)
+        else:
+            return web.json_response({"status": "Not found"}, status=404)
 
 
 app = web.Application()
