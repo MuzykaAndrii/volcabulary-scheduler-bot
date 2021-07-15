@@ -3,7 +3,7 @@ import logging
 from aiogram import Bot, Dispatcher, executor, types
 from config import Config
 
-from database import manage_user, Bundle
+from database import manage_user, Bundle, User, session
 
 #for state machine
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -69,8 +69,9 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 
     # store words in database
-    user_id = message.chat.id
-    new_bundle = Bundle(user_id)
+    user_telegram_id = message.chat.id
+    current_user = session.query(User).filter_by(telegram_id=user_telegram_id)
+    new_bundle = Bundle(current_user.id)
     new_bundle.encode_words(words)
     try:
         new_bundle.save()
