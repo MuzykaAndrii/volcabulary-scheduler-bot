@@ -58,10 +58,28 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     """
     Save all sended words
     """
-    async with state.proxy() as data:
-        words = data
+    #fetch saved data
+    async with state.proxy() as saved_data:
+        pass
+    
+    # build words dictionary from saved data
+    words = dict()
+    for word, translation in saved_data.items():
+        words[word] = translation
 
-    await message.answer('Words saved: {}'.format(words), reply_markup=types.ReplyKeyboardRemove())
+
+    # store words in database
+    user_id = message.chat.id
+    new_bundle = Bundle(user_id)
+    new_bundle.encode_words(words)
+    try:
+        new_bundle.save()
+    except:
+        await message.answer('Some problem while saving data, please try one more time(', reply_markup=types.ReplyKeyboardRemove())
+        await state.finish()
+        return
+
+    await message.answer('Words saved: ', reply_markup=types.ReplyKeyboardRemove())
     await state.finish()
 
 @dp.message_handler(state=Words.set_word)
