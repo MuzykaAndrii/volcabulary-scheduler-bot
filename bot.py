@@ -24,7 +24,6 @@ logging.basicConfig(level=logging.INFO)
 
 # Initialize bot and dispatcher with storage to save states
 bot = Bot(token=Config.TOKEN)
-bot.set_webhook(url=Config.WEBHOOK + '/bot')
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
@@ -148,6 +147,18 @@ async def api_handler(request):
         else:
             return web.json_response({"status": "Not found"}, status=404)
 
+async def on_startup(dp):
+    await bot.set_webhook(Config.WEBHOOK + '/bot')
+    # insert code here to run it after start
+
+
+async def on_shutdown(dp):
+    logging.warning('Shutting down..')
+
+    # insert code here to run it before shutdown
+
+    # Remove webhook (not acceptable in some cases)
+    await bot.delete_webhook()
 
 app = web.Application()
 # add a custom route
@@ -158,4 +169,6 @@ configure_app(dp, app, "/bot")
 
 if __name__ == '__main__':
     # executor.start_polling(dp, skip_updates=True)
+    app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
     web.run_app(app, port=5000)
