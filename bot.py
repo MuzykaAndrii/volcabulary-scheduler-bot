@@ -16,7 +16,6 @@ from aiogram.dispatcher.webhook import configure_app
 from aiohttp import web
 
 import json
-
 def for_dump(words):
     return json.dumps(words, ensure_ascii=False)
 
@@ -25,6 +24,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Initialize bot and dispatcher with storage to save states
 bot = Bot(token=Config.TOKEN)
+bot.set_webhook(url=Config.WEBHOOK + '/bot')
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 

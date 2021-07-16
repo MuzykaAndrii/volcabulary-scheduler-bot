@@ -3,5 +3,5 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
     TOKEN = os.getenv('BOT_TOKEN')
-    WEBHOOK = os.getenv('WEBHOOK' + '/bot')
+    WEBHOOK = os.getenv('WEBHOOK')
     DATABASE_URL = os.getenv('DATABASE_URI', 'sqlite:///' + os.path.join(basedir, 'app.db'))
