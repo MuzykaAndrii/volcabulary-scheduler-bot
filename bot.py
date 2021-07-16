@@ -80,17 +80,24 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     # store words in database
     user_telegram_id = message.chat.id
     current_user = session.query(User).filter_by(telegram_id=user_telegram_id).first()
-    new_bundle = Bundle(current_user.id)
+    current_user_id = current_user.id
+    new_bundle = Bundle(current_user_id)
     new_bundle.encode_words(words)
     try:
-        new_bundle.save()
+        session.add(new_bundle)
+        session.commit()
+        bundle_id = new_bundle.id
+        session.close()
     except Exception as e:
         await message.answer('Some problem while saving data, please try one more time(', reply_markup=types.ReplyKeyboardRemove())
         print(e)
         await state.finish()
         return
 
-    await message.answer('Words saved: ', reply_markup=types.ReplyKeyboardRemove())
+    #generate api link
+    link = f'{Config.WEBHOOK}/api?user={current_user_id}&bundle={bundle_id}'
+
+    await message.answer('Words saved, api link: {}'.format(link), reply_markup=types.ReplyKeyboardRemove())
     await state.finish()
 
 @dp.message_handler(state=Words.set_word)
