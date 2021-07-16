@@ -171,4 +171,4 @@ if __name__ == '__main__':
     # executor.start_polling(dp, skip_updates=True)
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
-    web.run_app(app, port=process.env.PORT || 5000)
+    web.run_app(app, port=process.env.PORT or 5000)
