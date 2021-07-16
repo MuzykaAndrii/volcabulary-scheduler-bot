@@ -96,7 +96,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
         return
 
     #generate api link
-    link = f'{Config.WEBHOOK}/api?user={current_user_id}&bundle={bundle_id}'
+    link = f'{Config.WEBHOOK}api?user={current_user_id}&bundle={bundle_id}'
 
     await message.answer('Words saved, api link: {}'.format(link), reply_markup=types.ReplyKeyboardRemove())
     await state.finish()
