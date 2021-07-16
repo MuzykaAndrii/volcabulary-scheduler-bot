@@ -148,7 +148,7 @@ async def api_handler(request):
             return web.json_response({"status": "Not found"}, status=404)
 
 async def on_startup(dp):
-    await bot.set_webhook(Config.WEBHOOK + '/bot')
+    await bot.set_webhook(Config.WEBHOOK + 'bot')
     # insert code here to run it after start
 
 
