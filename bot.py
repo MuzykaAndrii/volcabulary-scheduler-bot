@@ -15,6 +15,8 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.webhook import configure_app
 from aiohttp import web
 
+import os
+
 import json
 def for_dump(words):
     return json.dumps(words, ensure_ascii=False)
@@ -171,4 +173,4 @@ if __name__ == '__main__':
     # executor.start_polling(dp, skip_updates=True)
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
-    web.run_app(app, port=process.env.PORT or 5000)
+    web.run_app(app, port=os.environ.get("PORT", 17995))
