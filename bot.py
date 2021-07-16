@@ -15,6 +15,11 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.webhook import configure_app
 from aiohttp import web
 
+import json
+
+def for_dump(words):
+    return json.dumps(words, ensure_ascii=False)
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
@@ -121,14 +126,18 @@ async def api_handler(request):
     try:
         user_id = int(url_params['user'])
         bundle_id = int(url_params['bundle'])
+    # not found needed keys
     except KeyError:
         return web.json_response({"status": "Expected args: user, bundle"}, status=404)
+    # ids is not integers
     except ValueError:
         return web.json_response({"status": "Expected args types: integer"}, status=404)
     else:
         bundle = session.query(Bundle).filter(Bundle.id==bundle_id, Bundle.creator_id==user_id).first()
+        # if bundle exists
         if bundle:
-            return web.json_response(bundle.words, status=200, content_type='application/json',)
+            return web.json_response(bundle.decode_words(), status=200, dumps=for_dump)
+        # if not found
         else:
             return web.json_response({"status": "Not found"}, status=404)
 
