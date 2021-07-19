@@ -7,6 +7,7 @@ from aiogram.dispatcher.filters import Text
 # importing bot instances
 from app.main import storage, dp, Config, bot
 from aiogram import types
+# for passing data through callback
 from aiogram.utils.callback_data import CallbackData
 
 # States
@@ -138,13 +139,12 @@ async def get_bundles(message: types.Message):
 
             link = f'{Config.WEBHOOK}api?user={current_user_id}&bundle={bundle.id}'
         
-            keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+            keyboard_markup = types.InlineKeyboardMarkup(row_width=2)
             btn_api = types.InlineKeyboardButton('API link', url=link)
             btn_schedule = types.InlineKeyboardButton('Set/unset schedule (coming soon)', callback_data='set_schedule')
             btn_delete = types.InlineKeyboardButton('Delete bundle', callback_data=delete_callback.new(bundle_id=bundle.id, action='delete_bundle'))
-            keyboard_markup.add(btn_api)
+            keyboard_markup.row(btn_api, btn_delete)
             keyboard_markup.add(btn_schedule)
-            keyboard_markup.add(btn_delete)
 
             await message.answer(words, reply_markup=keyboard_markup)
 
