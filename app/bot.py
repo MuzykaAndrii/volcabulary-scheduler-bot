@@ -88,8 +88,15 @@ async def process_set_word(message: types.Message, state: FSMContext):
 
     # divide and clear input text
     input_data = message.text.split('-')
-    word = input_data[0].strip()
-    translation = input_data[1].strip()
+    try:
+        word = input_data[0].strip()
+        translation = input_data[1].strip()
+    except IndexError:
+        await message.answer("Wrong input, u should send me words in format: 'word - translation' (without brackets). Please try one more time.")
+        return
+    except:
+        await message.answer("Something went wrong, please try again or contact with our support")
+        return
 
     async with state.proxy() as data:
         data[word] = translation
