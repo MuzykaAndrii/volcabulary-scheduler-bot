@@ -46,6 +46,15 @@ class Bundle(DbMixin, Base):
     
     def decode_words(self):
         return json.loads(self.words)
+    
+    def generate_words_string(self):
+        words_string = str()
+        dict_words = self.decode_words()
+        for word, translation in dict_words.items():
+            words_string += f'{word} - {translation}\n'
+        
+        return words_string
+
 
 def manage_user(f):
     @wraps(f)

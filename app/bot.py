@@ -5,8 +5,9 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 # importing bot instances
-from app.main import storage, dp, Config
+from app.main import storage, dp, Config, bot
 from aiogram import types
+from aiogram.utils.callback_data import CallbackData
 
 # States
 class Words(StatesGroup):
@@ -53,10 +54,8 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     
     # build words dictionary from saved data
     words = dict()
-    final_response = str()
     for word, translation in saved_data.items():
         words[word] = translation
-        final_response += f'{word} - {translation}\n'
 
 
     # store words in database
@@ -68,6 +67,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     try:
         session.add(new_bundle)
         session.commit()
+        final_response = new_bundle.generate_words_string()
         bundle_id = new_bundle.id
         session.close()
     except Exception as e:
@@ -123,6 +123,54 @@ async def process_set_word(message: types.Message, state: FSMContext):
     finally:
         return
 
+delete_callback = CallbackData('rm_bundle', 'action', 'bundle_id')
+
+@dp.message_handler(commands=['my'])
+@manage_user
+async def get_bundles(message: types.Message):
+    user_telegram_id = message.chat.id
+    current_user = session.query(User).filter_by(telegram_id=user_telegram_id).first()
+    current_user_id = current_user.id
+    bundles = current_user.bundles
+    if bundles:
+        for bundle in bundles:
+            words = bundle.generate_words_string()
+
+            link = f'{Config.WEBHOOK}api?user={current_user_id}&bundle={bundle.id}'
+        
+            keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+            btn_api = types.InlineKeyboardButton('API link', url=link)
+            btn_schedule = types.InlineKeyboardButton('Set/unset schedule (coming soon)', callback_data='set_schedule')
+            btn_delete = types.InlineKeyboardButton('Delete bundle', callback_data=delete_callback.new(bundle_id=bundle.id, action='delete_bundle'))
+            keyboard_markup.add(btn_api)
+            keyboard_markup.add(btn_schedule)
+            keyboard_markup.add(btn_delete)
+
+            await message.answer(words, reply_markup=keyboard_markup)
+
+@dp.callback_query_handler(delete_callback.filter(action='delete_bundle'))
+async def delete_bundle_handler(query: types.CallbackQuery, callback_data: dict):
+    try:
+        bundle_id = int(callback_data['bundle_id'])
+    except ValueError:
+        await query.answer('Bundle id should be integer')
+        return
+
+    bundle = session.query(Bundle).get(bundle_id)
+
+    if bundle:
+        owner = session.query(User).filter_by(telegram_id=query.from_user.id).first()
+        if bundle.creator_id == owner.id:
+            bundle.delete()
+            if await bot.delete_message(query.message.chat.id, query.message.message_id):
+                await query.answer('Bundle successfully deleted')
+            else:
+                await query.answer('Some problem while deleting, try one more time')
+        else:
+            await query.answer('You not owner of this bundle')
+    else:
+        await query.answer('Bundles not found')
+
 @dp.message_handler(commands=['start', 'help'])
 @manage_user
 async def send_welcome(message: types.Message):
@@ -131,4 +179,4 @@ async def send_welcome(message: types.Message):
 @dp.message_handler()
 @manage_user
 async def echo(message: types.Message):
-    await message.answer(message.text)
+    await message.answer('Unknown command, check list of avaliable commands')
