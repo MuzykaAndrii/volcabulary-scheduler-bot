@@ -53,8 +53,10 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     
     # build words dictionary from saved data
     words = dict()
+    final_response = str()
     for word, translation in saved_data.items():
         words[word] = translation
+        final_response += f'{word} - {translation}\n'
 
 
     # store words in database
@@ -76,9 +78,20 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
     #generate api link
     link = f'{Config.WEBHOOK}api?user={current_user_id}&bundle={bundle_id}'
+        
+    keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+    btn_api = types.InlineKeyboardButton('API link', url=link)
+    btn_schedule = types.InlineKeyboardButton('Set schedule (coming soon)', callback_data='set_schedule')
+    keyboard_markup.add(btn_api)
+    keyboard_markup.add(btn_schedule)
 
-    await message.answer('Words saved, api link: {}'.format(link), reply_markup=types.ReplyKeyboardRemove())
+    await message.answer('Words successfully saved.', reply_markup=types.ReplyKeyboardRemove())
+    await message.answer(final_response, reply_markup=keyboard_markup)
     await state.finish()
+
+@dp.callback_query_handler(text='set_schedule')
+async def set_schedule(callback_query: types.CallbackQuery):
+    await callback_query.answer('Scheduler is not available yet.')
 
 @dp.message_handler(state=Words.set_word)
 async def process_set_word(message: types.Message, state: FSMContext):
@@ -91,19 +104,24 @@ async def process_set_word(message: types.Message, state: FSMContext):
     try:
         word = input_data[0].strip()
         translation = input_data[1].strip()
+    # check if text contains divider
     except IndexError:
         await message.answer("Wrong input, u should send me words in format: 'word - translation' (without brackets). Please try one more time.")
-        return
-    except:
+    except Exception as e:
         await message.answer("Something went wrong, please try again or contact with our support")
+        print(e)
+    else:
+        #open storage
+        async with state.proxy() as data:
+            data[word] = translation
+        
+        # logging
+        print(f'Setted {word} - {translation} for {message.chat.id} user')
+
+        # answer
+        await message.answer("Okay, wanna to add one more? Just write it")
+    finally:
         return
-
-    async with state.proxy() as data:
-        data[word] = translation
-    
-    print(f'Setted {word} - {translation} for {message.chat.id} user')
-
-    await message.answer("Okay, wanna to add one more? Just write it")
 
 @dp.message_handler(commands=['start', 'help'])
 @manage_user
@@ -111,5 +129,6 @@ async def send_welcome(message: types.Message):
     await message.answer("Hi! I can help to improve your vocabulary")
 
 @dp.message_handler()
+@manage_user
 async def echo(message: types.Message):
     await message.answer(message.text)
