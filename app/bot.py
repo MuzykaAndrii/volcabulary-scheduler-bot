@@ -1,33 +1,12 @@
-import logging
-
-from aiogram import Bot, Dispatcher, executor, types
-from config import Config
-
-from database import manage_user, Bundle, User, session
-
+# for db
+from app.database import manage_user, Bundle, User, session
 #for state machine
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
-
-#for web app and webhook
-from aiogram.dispatcher.webhook import configure_app
-from aiohttp import web
-
-import os
-
-import json
-def for_dump(words):
-    return json.dumps(words, ensure_ascii=False)
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-
-# Initialize bot and dispatcher with storage to save states
-bot = Bot(token=Config.TOKEN)
-storage = MemoryStorage()
-dp = Dispatcher(bot, storage=storage)
+# importing bot instances
+from app.main import storage, dp, Config
+from aiogram import types
 
 # States
 class Words(StatesGroup):
@@ -127,50 +106,3 @@ async def send_welcome(message: types.Message):
 @dp.message_handler()
 async def echo(message: types.Message):
     await message.answer(message.text)
-
-# handle /api route
-async def api_handler(request):
-    url_params = request.rel_url.query
-    try:
-        user_id = int(url_params['user'])
-        bundle_id = int(url_params['bundle'])
-    # not found needed keys
-    except KeyError:
-        return web.json_response({"status": "Expected args: user, bundle"}, status=404)
-    # ids is not integers
-    except ValueError:
-        return web.json_response({"status": "Expected args types: integer"}, status=404)
-    else:
-        bundle = session.query(Bundle).filter(Bundle.id==bundle_id, Bundle.creator_id==user_id).first()
-        # if bundle exists
-        if bundle:
-            return web.json_response(bundle.decode_words(), status=200, dumps=for_dump)
-        # if not found
-        else:
-            return web.json_response({"status": "Not found"}, status=404)
-
-async def on_startup(dp):
-    await bot.set_webhook(Config.WEBHOOK + 'bot')
-    # insert code here to run it after start
-
-
-async def on_shutdown(dp):
-    logging.warning('Shutting down..')
-
-    # insert code here to run it before shutdown
-
-    # Remove webhook (not acceptable in some cases)
-    await bot.delete_webhook()
-
-app = web.Application()
-# add a custom route
-app.add_routes([web.get('/api', api_handler)])
-# every request to /bot route will be retransmitted to dispatcher to be handled
-# as a bot update
-configure_app(dp, app, "/bot")
-
-if __name__ == '__main__':
-    # executor.start_polling(dp, skip_updates=True)
-    app.on_startup.append(on_startup)
-    app.on_shutdown.append(on_shutdown)
-    web.run_app(app, port=os.environ.get("PORT", 17995))
