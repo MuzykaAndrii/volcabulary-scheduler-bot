@@ -100,29 +100,23 @@ async def process_set_word(message: types.Message, state: FSMContext):
     Set new word
     """
 
-    # divide and clear input text
-    input_data = message.text.split('-')
-    try:
-        word = input_data[0].strip()
-        translation = input_data[1].strip()
-    # check if text contains divider
-    except IndexError:
-        await message.answer("Wrong input, u should send me words in format: 'word - translation' (without brackets). Please try one more time.")
-    except Exception as e:
-        await message.answer("Something went wrong, please try again or contact with our support")
-        print(e)
-    else:
-        #open storage
-        async with state.proxy() as data:
-            data[word] = translation
-        
-        # logging
-        print(f'Setted {word} - {translation} for {message.chat.id} user')
+    response = message.text
+    rows = response.split('\n')
 
-        # answer
-        await message.answer("Okay, wanna to add one more? Just write it")
-    finally:
-        return
+    async with state.proxy() as data:
+        for row in rows:
+            parsed_data = row.split('-')
+            try:
+                word, translation = parsed_data[0].strip(), parsed_data[1].strip()
+            except IndexError:
+                await message.answer("Wrong inputs could be missed, please send me words in format: 'word - translation' (without brackets)")
+                continue
+            else:
+                data[word] = translation
+            finally:
+                continue
+
+        await message.answer("Okay, wanna to add more? Just write it")
 
 delete_callback = CallbackData('rm_bundle', 'action', 'bundle_id')
 
