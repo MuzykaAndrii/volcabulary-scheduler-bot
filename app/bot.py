@@ -5,7 +5,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 # importing bot instances
-from app.main import storage, dp, Config, bot
+from app.main import storage, dp, Config, bot, logging
 from aiogram import types
 # for passing data through callback
 from aiogram.utils.callback_data import CallbackData
