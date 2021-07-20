@@ -49,9 +49,11 @@ class Bundle(DbMixin, Base):
     
     def generate_words_string(self):
         words_string = str()
+        count = 0
         dict_words = self.decode_words()
         for word, translation in dict_words.items():
-            words_string += f'{word} - {translation}\n'
+            count += 1
+            words_string += f'{count}. {word} - {translation}\n'
         
         return words_string
 
