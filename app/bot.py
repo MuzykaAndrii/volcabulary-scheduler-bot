@@ -45,7 +45,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 # if swap this handler with next, command save will not works
 @dp.message_handler(state=Words.set_word, commands='save')
 @dp.message_handler(Text(equals='save', ignore_case=True), state=Words.set_word)
-async def cancel_handler(message: types.Message, state: FSMContext):
+async def save_handler(message: types.Message, state: FSMContext):
     """
     Save all sended words
     """
@@ -102,21 +102,23 @@ async def process_set_word(message: types.Message, state: FSMContext):
 
     response = message.text
     rows = response.split('\n')
+    rows_dictionary = dict()
 
-    async with state.proxy() as data:
-        for row in rows:
-            parsed_data = row.split('-')
-            try:
-                word, translation = parsed_data[0].strip(), parsed_data[1].strip()
-            except IndexError:
-                await message.answer("Wrong inputs could be missed, please send me words in format: 'word - translation' (without brackets)")
-                continue
-            else:
-                data[word] = translation
-            finally:
-                continue
+    for row in rows:
+        divided_row = row.split('-')
+        try:
+            word, translation = divided_row[0].strip(), divided_row[1].strip()
+        except IndexError:
+            await message.answer("Wrong inputs could be missed, please send me words in format: 'word - translation' (without brackets)")
+            continue
+        else:
+            rows_dictionary[word] = translation
 
-        await message.answer("Okay, wanna to add more? Just write it")
+    async with state.proxy() as storage:
+        for word, translation in rows_dictionary.items():
+            storage[word] = translation
+
+    await message.answer("Okay, wanna to add more? Just write it")
 
 delete_callback = CallbackData('rm_bundle', 'action', 'bundle_id')
 
@@ -150,20 +152,19 @@ async def delete_bundle_handler(query: types.CallbackQuery, callback_data: dict)
         await query.answer('Bundle id should be integer')
         return
 
-    bundle = session.query(Bundle).get(bundle_id)
-
-    if bundle:
-        owner = session.query(User).filter_by(telegram_id=query.from_user.id).first()
-        if bundle.creator_id == owner.id:
-            bundle.delete()
-            if await bot.delete_message(query.message.chat.id, query.message.message_id):
-                await query.answer('Bundle successfully deleted')
-            else:
-                await query.answer('Some problem while deleting, try one more time')
-        else:
-            await query.answer('You not owner of this bundle')
-    else:
+    bundle = session.query(Bundle).get(bundle_id)    
+    if not bundle:
         await query.answer('Bundles not found')
+        return
+    
+    owner = session.query(User).filter_by(telegram_id=query.from_user.id).first()
+    if bundle.creator_id != owner.id:
+        await query.answer('You not owner of this bundle')
+        return
+    
+    bundle.delete()
+    await bot.delete_message(query.message.chat.id, query.message.message_id)
+    await query.answer('Bundle successfully deleted')
 
 @dp.message_handler(commands=['start', 'help'])
 @manage_user
