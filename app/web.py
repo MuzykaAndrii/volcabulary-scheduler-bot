@@ -25,11 +25,11 @@ async def api_handler(request):
     # ids is not integers
     except ValueError:
         return web.json_response({"status": "Expected args types: integer"}, status=404)
+        
+    bundle = session.query(Bundle).filter(Bundle.id==bundle_id, Bundle.creator_id==user_id).first()
+    # if bundle exists
+    if bundle:
+        return web.json_response(Bundle.serialize_to_pretty(bundle.decode_words()), status=200, dumps=for_dump)
+    # if not found
     else:
-        bundle = session.query(Bundle).filter(Bundle.id==bundle_id, Bundle.creator_id==user_id).first()
-        # if bundle exists
-        if bundle:
-            return web.json_response(bundle.decode_words(), status=200, dumps=for_dump)
-        # if not found
-        else:
-            return web.json_response({"status": "Not found"}, status=404)
+        return web.json_response({"status": "Not found"}, status=404)

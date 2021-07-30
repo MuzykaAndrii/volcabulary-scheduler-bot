@@ -41,6 +41,14 @@ class Bundle(DbMixin, Base):
     def __init__(self, creator_id):
         self.creator_id = creator_id
     
+    @staticmethod
+    def serialize_to_pretty(dict_words):
+        words_pretty = tuple()
+        for word, translation in dict_words.items():
+            words_pretty += ({'word': word, 'translation': translation},)
+        
+        return {'dictionary': words_pretty}
+    
     def encode_words(self, dict_words):
         self.words = json.dumps(dict_words, ensure_ascii=False)
     

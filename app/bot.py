@@ -54,10 +54,7 @@ async def save_handler(message: types.Message, state: FSMContext):
         pass
     
     # build words dictionary from saved data
-    words = dict()
-    for word, translation in saved_data.items():
-        words[word] = translation
-
+    words = {word:translation for word, translation in saved_data.items()}
 
     # store words in database
     user_telegram_id = message.chat.id
